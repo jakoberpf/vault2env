@@ -10,7 +10,7 @@ Vault2Env will pull paths from a Hashicorp Vault k/v store, convert the key/valu
 Simply run the install.sh script:
 
 ```
-curl -o- https://raw.githubusercontent.com/polymatic-systems/vault2env/latest/install.sh | bash
+curl -o- https://raw.githubusercontent.com/polymatic-systems/vault2env/master/install.sh | bash
 ```
 
 Or, copy src/vault2env to a /bin directory and make it executable. The file is POSIX compatible and should work as long as you have the required dependent commands.
