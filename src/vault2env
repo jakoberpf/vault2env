@@ -1,0 +1,102 @@
+#!/bin/sh
+
+# shellcheck source=/dev/null
+
+set -ae
+
+if [ "$1" = "help" ] || [ "$#" -ne 2 ]; then
+  echo "
+  vault2env - hashicorp vault kev/value to environment variables
+
+Usage: vault2env comma-separated-paths path-to-file
+
+Examples:
+
+  vault2env path/to/env/one,path/to/env/two file.env
+
+About:
+
+  vault2env will pull paths from a Hashicorp Vault k/v store, convert the key/values into environment variables, 
+  and store them to a file.
+
+  vault2env will ignore variables with multi-line values and keys that are not alphanumeric.
+
+  if an environment variable exists in the current shell, it will overwrite any matching environment variable 
+  found in Vault.
+"
+  exit 0;
+fi
+
+# check needed binaries
+if [ ! "$(command -v vault)" ]; then
+  echo "vault binary not found, please install it first: https://www.vaultproject.io/downloads";
+  exit 1;
+elif [ ! "$(command -v jq)" ]; then
+  echo "jq binary not found, please install it first: https://stedolan.github.io/jq/download/";
+  exit 1;
+fi;
+
+trap 'rm -f .v2e_vault.env; echo "\ncommand aborted"; exit 0;' HUP INT QUIT ABRT TERM
+
+# pull vault variables
+
+v2e_file="${2}";
+v2e_paths="$(echo "${1}" | tr ',' ' ')";
+v2e_tries=5;
+
+rm -f .v2e_vault.env;
+for line in ${v2e_paths} ; do
+  printf "fetching: %s\n" "$line"
+
+  until vault kv get -format=json "$line" | jq -r '.data.data | to_entries[] | "\(.key)=\"\(.value)\""' >> .v2e_vault.env; do 
+    v2e_tries=$((v2e_tries-1));
+    if [ "$v2e_tries" -lt "1" ]; then echo "too many failed requests to vault"; exit 1; fi;
+    sleep 2;
+  done;
+
+  # print the version of the k/v path
+  until vault kv metadata get "$line" | grep current_version | tr -s ' ' | cut -d' ' -f2 | awk -v v="$line" '{print v" :version: "$1}'; do
+    v2e_tries=$((v2e_tries-1));
+    if [ "$v2e_tries" -lt "1" ]; then echo "too many failed requests to vault"; exit 1; fi;
+    sleep 2;
+  done;
+
+  echo '';
+done;
+
+v2e_vars="$(env | grep '=' | sed 's/=.*//g' | tr '\n' ' ')";
+
+matches='';
+for line in ${v2e_vars}; do 
+  match=$( ( grep "^${line}=" .v2e_vault.env || true ) | sed 's/=.*//g');
+  if [ -n "${match}" ]; then
+    matches="${matches}\n${match}";
+    sed -i "/^${match}=/d" .v2e_vault.env;
+    env | (grep "^${match}=" || true) >> .v2e_vault.env;
+  fi;
+done;
+
+if [ -n "${matches}" ]; then
+  printf 'the following vault variables were replaced with existing variables in the current shell:\n';
+  printf "%s" "${matches}";
+fi;
+
+# escape dollar signs in variables
+sed -i 's/\$/\\\$/g' .v2e_vault.env;
+
+# validate key names
+if [ "$(< .v2e_vault.env cut -d'=' -f1 | grep -c -E '\\s')" -gt 0 ]; then 
+  echo 'key names cannot have spaces:';
+  < .v2e_vault.env cut -d'=' -f1 | grep -E '\\s' | sed 's/=.*//g';
+  exit 1;
+fi;
+
+printf "the following variables will be saved to %s \n\n" "${v2e_file}";
+
+< .v2e_vault.env sed 's/=.*//';
+mv .v2e_vault.env "${v2e_file}";
+
+printf -- '---\n';
+
+printf '\nto get these environment variables into your current shell, run:\n';
+printf 'set -a && . %s && set +a;\n\n' "${v2e_file}";
