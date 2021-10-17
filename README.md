@@ -7,7 +7,13 @@ Vault2Env will pull paths from a Hashicorp Vault k/v store, convert the key/valu
 
 ## Getting Started
 
-Simply copy `src/vault2env` to a /bin directory and make it executable. The file is POSIX compatible and should work as long as you have the required dependent commands.
+Simply run the install.sh script:
+
+```
+curl -o- https://raw.githubusercontent.com/polymatic-systems/vault2env/latest/install.sh | bash
+```
+
+Or, copy src/vault2env to a /bin directory and make it executable. The file is POSIX compatible and should work as long as you have the required dependent commands.
 
 ## Usage
 
@@ -29,7 +35,7 @@ If the secret data pulled from Vault contains any variables that are already def
 
 ## License
 
-[Apache License 2.0](https://github.com/polymatic-systems/tempro/blob/master/LICENSE)
+[Apache License 2.0](https://github.com/polymatic-systems/vault2env/blob/master/LICENSE)
 
 ---
 
