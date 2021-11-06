@@ -63,19 +63,21 @@ for line in ${v2e_paths} ; do
   fi;
 
   # shellcheck disable=SC2086
-  until vault kv get -format=json $v2e_version "$v2e_path" | jq -r '.data.data | to_entries[] | "\(.key)=\"\(.value)\""' >> .v2e_vault.env; do 
+  until v2e_data="$(vault kv get -format=json $v2e_version "$v2e_path")"; do
     v2e_tries=$((v2e_tries-1));
     if [ "$v2e_tries" -lt "1" ]; then echo "too many failed requests to vault, could not get secret"; exit 1; fi;
     sleep 2;
   done;
+  printf "%s" "$v2e_data" | jq -r '.data.data | to_entries[] | "\(.key)=\"\(.value)\""' >> .v2e_vault.env;
 
   # print the version of the k/v path if pulling the latest
   if [ -z "$v2e_version" ]; then
-    until vault kv metadata get "$v2e_path" | grep current_version | tr -s ' ' | cut -d' ' -f2 | awk -v v="$v2e_path" '{print "fetched: "v" -version="$1}'; do
+    until v2e_datav="$(vault kv metadata get "$v2e_path")"; do
       v2e_tries=$((v2e_tries-1));
       if [ "$v2e_tries" -lt "1" ]; then echo "too many failed requests to vault, could not get version"; exit 1; fi;
       sleep 2;
     done;
+    printf "%s" "$v2e_datav" | grep current_version | tr -s ' ' | cut -d' ' -f2 | awk -v v="$v2e_path" '{print "fetched: "v" -version="$1}';
   fi;
 
   echo '';
