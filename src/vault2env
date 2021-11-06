@@ -14,6 +14,8 @@ Examples:
 
   vault2env path/to/env/one,path/to/env/two file.env
 
+  vault2env path/to/env/one:32,path/to/env/two file.env
+
 About:
 
   vault2env will pull paths from a Hashicorp Vault k/v store, convert the key/values into environment variables, 
@@ -23,6 +25,10 @@ About:
 
   if an environment variable exists in the current shell, it will overwrite any matching environment variable 
   found in Vault.
+
+  you can also specify a specific version of a path to pull by appending a colon and the version number, 
+  i.e. path/to/env/one:32
+  otherwise, the latest version is pulled by default
 "
   exit 0;
 fi
@@ -46,20 +52,33 @@ v2e_tries=5;
 
 rm -f .v2e_vault.env;
 for line in ${v2e_paths} ; do
-  printf "fetching: %s\n" "$line"
+  v2e_version='';
+  v2e_path="$line";
+  if [ "$(printf "%s" "$line" | grep -o ':' | grep -c .)" = "1" ]; then
+    v2e_version="-version=$(printf "%s" "$line" | cut -d ':' -f2)";
+    v2e_path="$(printf "%s" "$line" | cut -d ':' -f1)";
+    printf "fetching: %s %s\n" "$v2e_path" "$v2e_version";
+  else
+    printf "fetching: %s latest\n" "$v2e_path";
+  fi;
 
-  until vault kv get -format=json "$line" | jq -r '.data.data | to_entries[] | "\(.key)=\"\(.value)\""' >> .v2e_vault.env; do 
+  # shellcheck disable=SC2086
+  until v2e_data="$(vault kv get -format=json $v2e_version "$v2e_path")"; do
     v2e_tries=$((v2e_tries-1));
-    if [ "$v2e_tries" -lt "1" ]; then echo "too many failed requests to vault"; exit 1; fi;
+    if [ "$v2e_tries" -lt "1" ]; then echo "too many failed requests to vault, could not get secret"; exit 1; fi;
     sleep 2;
   done;
+  printf "%s" "$v2e_data" | jq -r '.data.data | to_entries[] | "\(.key)=\"\(.value)\""' >> .v2e_vault.env;
 
-  # print the version of the k/v path
-  until vault kv metadata get "$line" | grep current_version | tr -s ' ' | cut -d' ' -f2 | awk -v v="$line" '{print v" :version: "$1}'; do
-    v2e_tries=$((v2e_tries-1));
-    if [ "$v2e_tries" -lt "1" ]; then echo "too many failed requests to vault"; exit 1; fi;
-    sleep 2;
-  done;
+  # print the version of the k/v path if pulling the latest
+  if [ -z "$v2e_version" ]; then
+    until v2e_datav="$(vault kv metadata get "$v2e_path")"; do
+      v2e_tries=$((v2e_tries-1));
+      if [ "$v2e_tries" -lt "1" ]; then echo "too many failed requests to vault, could not get version"; exit 1; fi;
+      sleep 2;
+    done;
+    printf "%s" "$v2e_datav" | grep current_version | tr -s ' ' | cut -d' ' -f2 | awk -v v="$v2e_path" '{print "fetched: "v" -version="$1}';
+  fi;
 
   echo '';
 done;
