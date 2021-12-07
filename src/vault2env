@@ -10,6 +10,11 @@ if [ "$1" = "help" ]; then
 
 Usage: vault2env comma-separated-paths path-to-file
 
+Flags: 
+
+  * -s | --show= 
+  * -p | --prefix=
+
 Examples:
 
   vault2env path/to/env/one,path/to/env/two file.env
