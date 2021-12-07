@@ -55,6 +55,7 @@ v2e_tries=5;
 # Default values of arguments
 v2e_hide_values=1
 v2e_prefix=''
+v2e_consumer=''
 OTHER_ARGUMENTS=()
 
 # Loop through arguments and process them
@@ -64,6 +65,10 @@ do
         -s|--show)
         v2e_hide_values=0
         shift # Remove --initialize from processing
+        ;;
+        -c=*|--consumer=*)
+        v2e_consumer="${arg#*=}"
+        shift # Remove --prefix= from processing
         ;;
         -p=*|--prefix=*)
         v2e_prefix="${arg#*=}"
@@ -104,7 +109,14 @@ for line in ${v2e_paths} ; do
     if [ "$v2e_tries" -lt "1" ]; then echo "too many failed requests to vault, could not get secret"; exit 1; fi;
     sleep 2;
   done;
-  printf "%s" "$v2e_data" | jq -r '.data.data | to_entries[] | "\(.key)=\"\(.value)\""' >> .v2e_vault.env;
+
+  if [ "$v2e_prefix" != '' ]; then
+    printf "%s" "$v2e_data" | jq -r '.data.data | to_entries[] | "$v2e_prefix\(.key)=\"\(.value)\""' >> .v2e_vault.env;
+  elif [ "$v2e_consumer" == "terraform" ]; then
+    printf "%s" "$v2e_data" | jq -r '.data.data | to_entries[] | "TF_VAR_\(.key)=\"\(.value)\""' >> .v2e_vault.env;
+  else 
+    printf "%s" "$v2e_data" | jq -r '.data.data | to_entries[] | "\(.key)=\"\(.value)\""' >> .v2e_vault.env;
+  fi
 
   # print the version of the k/v path if pulling the latest
   if [ -z "$v2e_version" ]; then
