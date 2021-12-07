@@ -132,7 +132,7 @@ if [ -n "${matches}" ]; then
 fi;
 
 # escape dollar signs in variables
-sed -i 's/\$/\\\$/g' .v2e_vault.env;
+# sed -i 's/\$/\\\$/g' .v2e_vault.env;
 
 # validate key names
 if [ "$(< .v2e_vault.env cut -d'=' -f1 | grep -c -E '\\s')" -gt 0 ]; then 
