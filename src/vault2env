@@ -4,11 +4,16 @@
 
 set -ae
 
-if [ "$1" = "help" ] || [ "$#" -ne 2 ]; then
+if [ "$1" = "help" ]; then
   echo "
   vault2env - hashicorp vault kev/value to environment variables
 
 Usage: vault2env comma-separated-paths path-to-file
+
+Flags: 
+
+  * -s | --show= 
+  * -p | --prefix=
 
 Examples:
 
@@ -44,12 +49,48 @@ fi;
 
 trap 'rm -f .v2e_vault.env; echo "\ncommand aborted"; exit 0;' HUP INT QUIT ABRT TERM
 
-# pull vault variables
-
-v2e_file="${2}";
-v2e_paths="$(echo "${1}" | tr ',' ' ')";
+# set defaults
 v2e_tries=5;
 
+# Default values of arguments
+v2e_hide_values=1
+v2e_prefix=''
+v2e_consumer=''
+OTHER_ARGUMENTS=()
+
+# Loop through arguments and process them
+for arg in "$@"
+do
+    case $arg in
+        -s|--show)
+        v2e_hide_values=0
+        shift # Remove --initialize from processing
+        ;;
+        -c=*|--consumer=*)
+        v2e_consumer="${arg#*=}"
+        shift # Remove --prefix= from processing
+        ;;
+        -p=*|--prefix=*)
+        v2e_prefix="${arg#*=}"
+        shift # Remove --prefix= from processing
+        ;;
+        # -p|--prefix)
+        # v2e_prefix="$2"
+        # shift # Remove argument name from processing
+        # shift # Remove argument value from processing
+        # ;;
+        *)
+        OTHER_ARGUMENTS+=("$1")
+        shift # Remove generic argument from processing
+        ;;
+    esac
+done
+
+# get commandline path arguments
+v2e_paths="$(echo "${OTHER_ARGUMENTS[0]}" | tr ',' ' ')";
+v2e_file="${OTHER_ARGUMENTS[1]}";
+
+# pull vault variables
 rm -f .v2e_vault.env;
 for line in ${v2e_paths} ; do
   v2e_version='';
@@ -68,7 +109,14 @@ for line in ${v2e_paths} ; do
     if [ "$v2e_tries" -lt "1" ]; then echo "too many failed requests to vault, could not get secret"; exit 1; fi;
     sleep 2;
   done;
-  printf "%s" "$v2e_data" | jq -r '.data.data | to_entries[] | "\(.key)=\"\(.value)\""' >> .v2e_vault.env;
+
+  if [ "$v2e_prefix" != '' ]; then
+    printf "%s" "$v2e_data" | jq -r '.data.data | to_entries[] | "$v2e_prefix\(.key)=\"\(.value)\""' >> .v2e_vault.env;
+  elif [ "$v2e_consumer" == "terraform" ]; then
+    printf "%s" "$v2e_data" | jq -r '.data.data | to_entries[] | "TF_VAR_\(.key)=\"\(.value)\""' >> .v2e_vault.env;
+  else 
+    printf "%s" "$v2e_data" | jq -r '.data.data | to_entries[] | "\(.key)=\"\(.value)\""' >> .v2e_vault.env;
+  fi
 
   # print the version of the k/v path if pulling the latest
   if [ -z "$v2e_version" ]; then
@@ -101,7 +149,7 @@ if [ -n "${matches}" ]; then
 fi;
 
 # escape dollar signs in variables
-sed -i 's/\$/\\\$/g' .v2e_vault.env;
+# sed -i 's/\$/\\\$/g' .v2e_vault.env;
 
 # validate key names
 if [ "$(< .v2e_vault.env cut -d'=' -f1 | grep -c -E '\\s')" -gt 0 ]; then 
