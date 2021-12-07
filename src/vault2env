@@ -44,12 +44,43 @@ fi;
 
 trap 'rm -f .v2e_vault.env; echo "\ncommand aborted"; exit 0;' HUP INT QUIT ABRT TERM
 
-# pull vault variables
-
-v2e_file="${2}";
-v2e_paths="$(echo "${1}" | tr ',' ' ')";
+# set defaults
 v2e_tries=5;
 
+# Default values of arguments
+v2e_hide_values=1
+v2e_prefix=''
+OTHER_ARGUMENTS=()
+
+# Loop through arguments and process them
+for arg in "$@"
+do
+    case $arg in
+        -s|--show)
+        v2e_hide_values=0
+        shift # Remove --initialize from processing
+        ;;
+        -p=*|--prefix=*)
+        v2e_prefix="${arg#*=}"
+        shift # Remove --prefix= from processing
+        ;;
+        # -p|--prefix)
+        # v2e_prefix="$2"
+        # shift # Remove argument name from processing
+        # shift # Remove argument value from processing
+        # ;;
+        *)
+        OTHER_ARGUMENTS+=("$1")
+        shift # Remove generic argument from processing
+        ;;
+    esac
+done
+
+# get commandline path arguments
+v2e_paths="$(echo "${OTHER_ARGUMENTS[0]}" | tr ',' ' ')";
+v2e_file="${OTHER_ARGUMENTS[1]}";
+
+# pull vault variables
 rm -f .v2e_vault.env;
 for line in ${v2e_paths} ; do
   v2e_version='';
