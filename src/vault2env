@@ -4,7 +4,7 @@
 
 set -ae
 
-if [ "$1" = "help" ] || [ "$#" -ne 2 ]; then
+if [ "$1" = "help" ]; then
   echo "
   vault2env - hashicorp vault kev/value to environment variables
 
