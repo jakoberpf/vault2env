@@ -114,13 +114,15 @@ for line in ${v2e_paths} ; do
     sleep 2;
   done;
 
-  if [ "$v2e_prefix" != '' ]; then
-    printf "%s" "$v2e_data" | jq -r '.data.data | to_entries[] | "$v2e_prefix\(.key)=\"\(.value)\""' >> .v2e_vault.env;
-  elif [ "$v2e_consumer" == "terraform" ]; then
-    printf "%s" "$v2e_data" | jq -r '.data.data | to_entries[] | "TF_VAR_\(.key)=\"\(.value)\""' >> .v2e_vault.env;
-  else 
-    printf "%s" "$v2e_data" | jq -r '.data.data | to_entries[] | "\(.key)=\"\(.value)\""' >> .v2e_vault.env;
+  v2e_prefix_assembly=''
+  if [ "$v2e_consumer" == "terraform" ]; then
+    v2e_prefix_assembly="TF_VAR_"
   fi
+  if [ "$v2e_prefix" != '' ]; then
+    v2e_prefix_assembly="$v2e_prefix_assembly$v2e_prefix"
+  fi
+
+  printf "%s" "$v2e_data" | jq --arg prefix "$v2e_prefix_assembly" -r '.data.data | to_entries[] | "\($prefix + .key)=\"\(.value)\""' >> .v2e_vault.env;
 
   # print the version of the k/v path if pulling the latest
   if [ -z "$v2e_version" ]; then
