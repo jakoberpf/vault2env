@@ -12,8 +12,12 @@ Usage: vault2env comma-separated-paths path-to-file
 
 Flags: 
 
-  * -s | --show= 
-  * -p | --prefix=
+  * -s= | --show                                    : DANGEROUS: Prints the values of the environment variables
+                                                      to the terminal output
+  * -p= | --prefix=<string>                         : Adds the given prefix to the environment variable key
+  * -c= | --consumer=<terraform,pulumi,ansible>     : Set the consumer for the environment variables, for eg. 
+                                                      terraform (adds key prefix TF_VAR_), pulumi ( WIP ),
+                                                      ansible ( WIP )
 
 Examples:
 
@@ -110,13 +114,15 @@ for line in ${v2e_paths} ; do
     sleep 2;
   done;
 
-  if [ "$v2e_prefix" != '' ]; then
-    printf "%s" "$v2e_data" | jq -r '.data.data | to_entries[] | "$v2e_prefix\(.key)=\"\(.value)\""' >> .v2e_vault.env;
-  elif [ "$v2e_consumer" == "terraform" ]; then
-    printf "%s" "$v2e_data" | jq -r '.data.data | to_entries[] | "TF_VAR_\(.key)=\"\(.value)\""' >> .v2e_vault.env;
-  else 
-    printf "%s" "$v2e_data" | jq -r '.data.data | to_entries[] | "\(.key)=\"\(.value)\""' >> .v2e_vault.env;
+  v2e_prefix_assembly=''
+  if [ "$v2e_consumer" == "terraform" ]; then
+    v2e_prefix_assembly="TF_VAR_"
   fi
+  if [ "$v2e_prefix" != '' ]; then
+    v2e_prefix_assembly="$v2e_prefix_assembly$v2e_prefix"
+  fi
+
+  printf "%s" "$v2e_data" | jq --arg prefix "$v2e_prefix_assembly" -r '.data.data | to_entries[] | "\($prefix + .key)=\"\(.value)\""' >> .v2e_vault.env;
 
   # print the version of the k/v path if pulling the latest
   if [ -z "$v2e_version" ]; then
@@ -132,6 +138,8 @@ for line in ${v2e_paths} ; do
 done;
 
 v2e_vars="$(env | grep '=' | sed 's/=.*//g' | tr '\n' ' ')";
+
+# find base64 vars and decode them https://stackoverflow.com/questions/475074/regex-to-parse-or-validate-base64-data/475217#475217
 
 matches='';
 for line in ${v2e_vars}; do 
