@@ -12,8 +12,12 @@ Usage: vault2env comma-separated-paths path-to-file
 
 Flags: 
 
-  * -s | --show= 
-  * -p | --prefix=
+  * -s= | --show                                    : DANGEROUS: Prints the values of the environment variables
+                                                      to the terminal output
+  * -p= | --prefix=<string>                         : Adds the given prefix to the environment variable key
+  * -c= | --consumer=<terraform,pulumi,ansible>     : Set the consumer for the environment variables, for eg. 
+                                                      terraform (adds key prefix TF_VAR_), pulumi ( WIP ),
+                                                      ansible ( WIP )
 
 Examples:
 
