@@ -137,6 +137,8 @@ done;
 
 v2e_vars="$(env | grep '=' | sed 's/=.*//g' | tr '\n' ' ')";
 
+# find base64 vars and decode them https://stackoverflow.com/questions/475074/regex-to-parse-or-validate-base64-data/475217#475217
+
 matches='';
 for line in ${v2e_vars}; do 
   match=$( ( grep "^${line}=" .v2e_vault.env || true ) | sed 's/=.*//g');
