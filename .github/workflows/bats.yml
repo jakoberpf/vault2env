@@ -12,6 +12,9 @@ jobs:
         uses: mig4/setup-bats@v1
         with:
           bats-version: 1.2.1
+      - uses: innovationnorway/setup-vault@v1
+        with:
+          version: '~1.8'
       - name: Checkout
         uses: actions/checkout@v2
       - name: Test vault setup
