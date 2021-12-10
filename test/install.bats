@@ -2,15 +2,6 @@
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd $GIT_ROOT
 
-setup() {
-   $GIT_ROOT/test/docker/up.sh
-}
-
-teardown() {
-   echo "teardown"
-   $GIT_ROOT/test/docker/down.sh
-}
-
 @test "Test the install script" {
   ./install.sh
   [ -f "/usr/local/bin/vault2env" ]
