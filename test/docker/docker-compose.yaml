@@ -1,0 +1,16 @@
+---
+version: "2.1"
+services:
+  vault-server:
+    image: vault
+    container_name: vault-server
+    ports:
+      - 8200:8200
+    volumes:
+      - ./logs:/vault/logs
+      - ./data:/vault/data
+      - ./config:/vault/config
+    cap_add:
+      - IPC_LOCK
+    entrypoint: vault server -config=/vault/config/vault.json
+    restart: always
