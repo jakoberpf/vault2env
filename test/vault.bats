@@ -4,6 +4,7 @@ cd $GIT_ROOT
 
 setup() {
   $GIT_ROOT/test/docker/up.sh
+  source $GIT_ROOT/test/docker/.env
 }
 
 teardown() {

@@ -6,6 +6,7 @@ vault2env_bin="./src/vault2env"
 
 setup() {
    $GIT_ROOT/test/docker/up.sh
+   source $GIT_ROOT/test/docker/.env
    vault secrets enable -version=2 kv
 }
 

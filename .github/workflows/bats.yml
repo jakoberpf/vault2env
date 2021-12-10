@@ -28,16 +28,13 @@ jobs:
       # Run Tests
       - name: Test vault setup
         run: bats test/vault.bats
-        env:
-          VAULT_TOKEN: s.D0BSl6yaX83ROHVsa2Tq439r
-          VAULT_ADDR: http://0.0.0.0:8200
+        # env:
+        #   VAULT_TOKEN: s.D0BSl6yaX83ROHVsa2Tq439r
+        #   VAULT_ADDR: http://0.0.0.0:8200
       - name: Test install script
         run: bats test/install.bats
-        env:
-          VAULT_TOKEN: s.D0BSl6yaX83ROHVsa2Tq439r
-          VAULT_ADDR: http://0.0.0.0:8200
       - name: Test commands
         run: bats test/commands.bats
-        env:
-          VAULT_TOKEN: s.D0BSl6yaX83ROHVsa2Tq439r
-          VAULT_ADDR: http://0.0.0.0:8200
+        # env:
+        #   VAULT_TOKEN: s.D0BSl6yaX83ROHVsa2Tq439r
+        #   VAULT_ADDR: http://0.0.0.0:8200
