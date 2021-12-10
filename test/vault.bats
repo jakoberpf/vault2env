@@ -7,7 +7,6 @@ setup() {
 }
 
 teardown() {
-   echo "teardown"
    $GIT_ROOT/test/docker/down.sh
 }
 
