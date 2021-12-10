@@ -4,3 +4,6 @@ cd "$GIT_ROOT"/test/docker
 
 echo "Powering down Vault"
 docker-compose down
+
+echo "Cleanup Vault data"
+rm -rf data/

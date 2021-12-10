@@ -2,6 +2,10 @@
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT"/test/docker
 
+echo "Cleanup Vault data"
+rm -rf data/
+tar -xzvf data.tar.gz # To update the compressed data run 'tar -czvf data.tar.gz data'
+
 echo "Start up Vault"
 docker-compose up -d
 
