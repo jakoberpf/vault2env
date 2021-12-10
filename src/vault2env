@@ -98,7 +98,7 @@ done
 
 # get commandline path arguments
 v2e_paths="$(echo "${OTHER_ARGUMENTS[0]}" | tr ',' ' ')";
-v2e_file="${OTHER_ARGUMENTS[1]}";
+v2e_file="${OTHER_ARGUMENTS[1]:-.env}";
 
 # pull vault variables
 rm -f .v2e_vault.env;
