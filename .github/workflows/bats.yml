@@ -8,18 +8,33 @@ jobs:
   action:
     runs-on: ubuntu-latest
     steps:
+      # Setup BATS and VAULT CLI
       - name: Setup BATS
         uses: mig4/setup-bats@v1
         with:
           bats-version: 1.2.1
-      - uses: innovationnorway/setup-vault@v1
-        with:
-          version: '~1.8'
+      # - name: Setup VAULT CLI
+      #   uses: innovationnorway/setup-vault@v1
+      #   with:
+      #     version: '~1.8'
+      - name: Install VAULT CLI
+        run:  |
+          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+          sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+          sudo apt-get update && sudo apt-get install vault
+      # Checkout Code
       - name: Checkout
         uses: actions/checkout@v2
+      # Run Tests
       - name: Test vault setup
         run: bats test/vault.bats
+        env:
+          VAULT_ADDR: http://0.0.0.0:8200
       - name: Test install script
         run: bats test/install.bats
+        env:
+          VAULT_ADDR: http://0.0.0.0:8200
       - name: Test commands
         run: bats test/commands.bats
+        env:
+          VAULT_ADDR: http://0.0.0.0:8200

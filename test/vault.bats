@@ -3,11 +3,11 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 cd $GIT_ROOT
 
 setup() {
-   $GIT_ROOT/test/docker/up.sh
+  $GIT_ROOT/test/docker/up.sh
 }
 
 teardown() {
-   $GIT_ROOT/test/docker/down.sh
+  $GIT_ROOT/test/docker/down.sh
 }
 
 @test "Verify that vault address is set" {
@@ -20,6 +20,6 @@ teardown() {
 }
 
 @test "Verify that vault initialized" {
-  result="$(echo 2 2+p | dc)"
-  [ "$result" -eq 4 ]
+  result="$(vault status | grep "Initialized" | tr -s ' ' | cut -d " " -f2)"
+  [ "$result" == "true" ]
 }
