@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 GIT_ROOT=$(git rev-parse --show-toplevel)
-cd $GIT_ROOT/test/docker
+cd "$GIT_ROOT"/test/docker
 
 echo "Start up Vault"
 docker-compose up -d
