@@ -1,0 +1,22 @@
+name: bats
+
+on: 
+  - push
+  - pull_request
+
+jobs:
+  action:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup BATS
+        uses: mig4/setup-bats@v1
+        with:
+          bats-version: 1.2.1
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Test vault setup
+        run: bats test/vault.bats
+      - name: Test install script
+        run: bats test/install.bats
+      - name: Test commands
+        run: bats test/commands.bats
