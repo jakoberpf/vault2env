@@ -18,6 +18,7 @@ Flags:
   * -c= | --consumer=<terraform,pulumi,ansible>     : Set the consumer for the environment variables, for eg. 
                                                       terraform (adds key prefix TF_VAR_), pulumi ( WIP ),
                                                       ansible ( WIP )
+  + -e  | --expand                                  : Expand an existing enviroment file
 
 Examples:
 
@@ -57,7 +58,8 @@ trap 'rm -f .v2e_vault.env; echo "\ncommand aborted"; exit 0;' HUP INT QUIT ABRT
 v2e_tries=5;
 
 # Default values of arguments
-v2e_hide_values=1
+v2e_hide_values='true'
+v2e_override_file='true'
 v2e_prefix=''
 v2e_consumer=''
 OTHER_ARGUMENTS=()
@@ -67,8 +69,12 @@ for arg in "$@"
 do
     case $arg in
         -s|--show)
-        v2e_hide_values=0
-        shift # Remove --initialize from processing
+        v2e_hide_values='false'
+        shift # Remove --show from processing
+        ;;
+        -e|--expand)
+        v2e_override_file='false'
+        shift # Remove --show from processing
         ;;
         -c=*|--consumer=*)
         v2e_consumer="${arg#*=}"
@@ -92,7 +98,7 @@ done
 
 # get commandline path arguments
 v2e_paths="$(echo "${OTHER_ARGUMENTS[0]}" | tr ',' ' ')";
-v2e_file="${OTHER_ARGUMENTS[1]}";
+v2e_file="${OTHER_ARGUMENTS[1]:-.env}";
 
 # pull vault variables
 rm -f .v2e_vault.env;
@@ -169,7 +175,13 @@ fi;
 printf "the following variables will be saved to %s \n\n" "${v2e_file}";
 
 < .v2e_vault.env sed 's/=.*//';
-mv .v2e_vault.env "${v2e_file}";
+
+if [ "$v2e_override_file" == "true" ]; then
+  mv .v2e_vault.env "${v2e_file}";
+else
+  echo "$(cat .v2e_vault.env)" >> "${v2e_file}"
+  rm .v2e_vault.env
+fi
 
 printf -- '---\n';
 
