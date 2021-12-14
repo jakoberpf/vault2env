@@ -6,4 +6,4 @@ echo "Powering down Vault"
 docker-compose down
 
 echo "Cleanup Vault data"
-rm -rf data/
+sudo rm -rf data/
